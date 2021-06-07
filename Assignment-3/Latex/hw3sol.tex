@@ -1,0 +1,298 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{pmisubmit}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{bbm}
+
+\begin{document}
+
+\initpmisubmision{3} % assignment number
+{Bholeshwar Khurana}   % your name
+{170214}	% your roll number
+
+\begin{pmisolution}
+\noindent The given problem is
+\begin{equation*}
+    q^*(\theta) = \argmin_{q(\theta)} ~~~ -\sum_{n=1}^N \left[\int q(\theta) log\left(p(\textbf{x}_n|\theta)\right)d\theta\right] + KL\left(q(\theta)||p(\theta)\right)
+\end{equation*}
+Plugging in the expression of KL, the problem becomes:
+\begin{align}
+    q^*(\theta) &=\argmin_{q(\theta)} ~~~ -\sum_{n=1}^N \left[\int q(\theta) log(p(\textbf{x}_n|\theta))d\theta\right] - \int q(\theta) \log \left(\frac{p(\theta)}{q(\theta)}\right)d\theta
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \sum_{n=1}^Nlog(p(\textbf{x}_n|\theta))d\theta - \int q(\theta) \log \left(\frac{p(\theta)}{q(\theta)}\right)d\theta
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) log(p(\textbf{X}|\theta))d\theta - \int q(\theta) \log \left(\frac{p(\theta)}{q(\theta)}\right)d\theta \tag{Observations are i.i.d.}
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \log \left(\frac{p(\textbf{X}|\theta)p(\theta)}{q(\theta)}\right)d\theta
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \log \left(\frac{p(\theta|\textbf{X})p(\vX)}{q(\theta)}\right)d\theta \tag{Using Bayes' rule}
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \log \left(\frac{p(\theta|\textbf{X})}{q(\theta)}\right)d\theta - \int q(\theta) \log(p(\vX))d\theta
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \log \left(\frac{p(\theta|\textbf{X})}{q(\theta)}\right)d\theta - \log(p(\vX)) \tag{since $\int q(\theta)d\theta = 1$}
+    \nonumber
+    \\&=\argmin_{q(\theta)} ~~~ - \int q(\theta) \log \left(\frac{p(\theta|\textbf{X})}{q(\theta)}\right)d\theta  \tag{since $p(\vX)$ doesn't depend on $q(\theta)$}
+    \nonumber
+    \\ &=\argmin_{q(\theta)} ~~~ KL\left(q(\theta) || p(\theta|\textbf{X})\right)
+    \nonumber
+    \\ &= p(\theta|\textbf{X})
+    \nonumber
+    \end{align}
+Hence solving the above problem is equivalent to finding the posterior distribution of $\theta$, i.e. $q^*(\theta) = p(\theta|\vX)$.
+\\ \\
+\noindent The given objective function tries to maximize $\sum_{n=1}^N \left[\int q(\theta) log\left(p(\textbf{x}_n|\theta)\right)d\theta\right]$, i.e. $q(\theta)$ tries to explain the data well. Also the objective function tries to minimize $ KL\left(q(\theta) || p(\theta)\right)$, keeping $q(\theta)$ close to the prior $p(\theta)$.
+
+\end{pmisolution}
+
+
+%%%%%%% PROBLEM 2 %%%%%%%%%%%%%%
+\begin{pmisolution} 
+\noindent Given for $N$ i.i.d. observations $\{ (\vx_n, y_n) \}_{n=1}^{N}$:
+\begin{align}
+    \text{Likelihood model: } ~~~~ p(y_n|\vw, \vx_n) &= \mathcal{N}\left(y_n \middle| \textbf{w}^\top\textbf{x}_n, \beta^{-1}\right)
+    \nonumber
+    \\p(\vy | \vw, \vX) &= \cN(\vy | \vX\vw, \beta^{-1}\vI_N)
+    \nonumber
+    \\
+    \text{Prior on $\vw$: } ~~~~~~~~~~~~ p(\textbf{w}) &= \mathcal{N}\left(\textbf{w} \middle| 0, \text{diag}(\alpha_1^{-1}, \alpha_2^{-1},\ldots, \alpha_D^{-1})\right)
+    \nonumber
+    \\ \text{Prior on $\beta$: } ~~~~~~~~~~~~~ p(\beta) &= \text{Gamma}\left(\beta \middle|a_0,b_0\right)
+    \nonumber
+    \\ \text{Prior on $\alpha_d$: } ~~~~~~~~~~~ p(\alpha_d) &= \text{Gamma}\left(\alpha_d \middle| e_0, f_0\right), ~ \forall d
+    \nonumber
+    \\ \text{Gamma}(\eta | \tau_1, \tau_2) &= \frac{\tau_2^{\tau_1}}{\Gamma(\tau_1)}\eta^{\tau_1-1} \exp{(-\tau_2\eta)}
+    \nonumber
+\end{align}
+\\
+\noindent Firstly, we need to find the joint distribution $p(\vy, \vw, \beta, \alpha_1, \cdots, \alpha_D | \vX)$. Using the chain rule of probability, we can write
+\begin{align}
+    p(\textbf{y},\textbf{w}, \beta, \alpha_1, \ldots, \alpha_D| \textbf{X})&=p(\textbf{y}|\textbf{w}, \beta, \textbf{X})p(\textbf{w}|\alpha_1, \ldots,\alpha_D)p(\beta)p(\alpha_1, \ldots,\alpha_D)
+    \nonumber
+    \\ &= p(\textbf{y}|\textbf{w}, \beta, \textbf{X})p(\textbf{w}|\alpha_1, \ldots, \alpha_D)p(\beta)\prod_{d=1}^D p(\alpha_d)
+    \nonumber
+\end{align}
+Taking $\log$ on both sides. Let $M = \log p(\textbf{y},\textbf{w}, \beta, \alpha_1,\ldots, \alpha_D| \textbf{X})$
+\begin{align}
+    M &= \log p(\textbf{y}|\textbf{w}, \beta, \textbf{X}) + \log p(\textbf{w}|\alpha_1, \ldots, \alpha_D) + \log p(\beta) + \sum_{d=1}^D\log p(\alpha_d)
+    \nonumber
+    \\ &=  \log \left(\sqrt{\frac{\beta^N}{(2\pi)^N}}\exp\left(\frac{-\beta}{2}\left(\vy - \vX\vw\right)^\top\left(\vy - \vX\vw\right)\right)\right) + \log \left(\sqrt{\frac{\alpha_1\ldots \alpha_D}{(2\pi)^D}}\exp\left({\frac{-\textbf{w}^\top\boldsymbol{\Sigma}\textbf{w}}{2}}\right)\right)
+    \nonumber
+    \\ & ~~~~ + \sum_{d=1}^D \log \left( \frac{f_0^{e_0}}{\Gamma(e_0)} \alpha_d^{e_0 - 1} \exp(- f_0 \alpha_d) \right) + \log \left( \frac{b_0^{a_0}}{\Gamma(a_0)} \beta^{a_0 - 1} \exp(- b_0 \beta) \right)
+    \nonumber
+    \\&\propto \frac{N}{2} \log \beta - \frac{\beta}{2} \left(\vy - \vX\vw\right)^\top\left(\vy - \vX\vw\right) + \sum_{d=1}^D \left[ \left(\frac{1}{2} + (e_0-1) \right) \log \alpha_d  -f_0 \alpha_d \right] -\frac{1}{2}\vw^\top \boldsymbol{\Sigma} \vw
+    \nonumber\\
+    & ~~~~  + (a_0 -1) \log \beta - b_0 \beta \tag{Ignoring constants}
+    \nonumber
+\end{align}
+where, $\boldsymbol{\Sigma} = \text{diag}(\alpha_1, \ldots, \alpha_D)$
+\\ \\
+\noindent We now need to compute mean-field updates for each parameter (while keeping other parameters fixed):
+\\ \\
+\noindent \textbf{1. } For $\vw$:
+\begin{align*}
+    \log q_{\vw}^*(\vw) &= \bE_{q_{\beta, \alpha}} \left[ \log p(\vy, \vw, \beta, \alpha_1, \ldots, \alpha_D| \vX) \right] \tag{Ignoring constants} \\
+    &= \bE_{q_{\beta, \alpha}} \left[ - \frac{\beta}{2}  \left(\vy - \vX\vw\right)^\top\left(\vy - \vX\vw\right) - \frac{1}{2}\vw^\top \boldsymbol{\Sigma} \vw \right]\\
+    &= -\frac{1}{2} \left[ \vw^\top \left( \bE[\beta] \vX^\top\vX + \text{diag}(\bE[\alpha_1], \ldots, \bE[\alpha_D]) \right) \vw + 2\vw^\top \bE[\beta]  \vX^\top\vy \right]
+\end{align*}
+This shows that $q^*(\vw)$ has a Gaussian form: 
+\begin{align*}
+    q^*(\vw) &= \cN(\vw | \boldsymbol{\mu}_{\vw}, \boldsymbol{\Sigma}_{\vw})\\
+    \text{where, } \boldsymbol{\Sigma}_{\vw} &= \left( \bE[\beta] \vX^\top\vX + \text{diag}\left(\bE[\alpha_1], \ldots, \bE[\alpha_D]\right) \right)^{-1}\\
+    \boldsymbol{\mu}_{\vw} &= \boldsymbol{\Sigma}_{\vw} \bE[\beta]  \vX^\top\vy
+\end{align*}
+\\ \\
+\noindent \textbf{2. } For $\beta$:
+\begin{align*}
+     \log q_{\beta}^*(\beta) &= \bE_{q_{\vw, \alpha}} [ \log p(\vy, \vw, \beta, \alpha_1, \ldots, \alpha_D| \vX) ]
+     \tag{Ignoring constants}
+     \\
+     &= \bE_{q_{\vw, \alpha}} \left[ - \frac{\beta}{2} \left(\vy - \vX\vw\right)^\top\left(\vy - \vX\vw\right) + \frac{N}{2} \log \beta +  (a_0 -1) \log \beta - b_0 \beta  \right] \\
+     &= \left( \frac{N}{2} + a_0 - 1 \right) \log \beta - \beta \left( \frac{1}{2} \bE_{\vw}\left[ \left(\vy - \vX\vw\right)^\top\left(\vy - \vX\vw\right)  \right] + b_0 \right)\\
+     &= \left( \frac{N}{2} + a_0 - 1 \right) \log \beta - \beta \left( \frac{1}{2} \bE_{\vw}\left[ \vy^\top\vy + \vw^\top\vX^\top\vX\vw - 2\vw^\top\vX^\top\vy  \right] + b_0 \right)\\
+     &= \left( \frac{N}{2} + a_0 - 1 \right) \log \beta - \beta \left( \frac{1}{2} \text{Trace}\left(\vy^\top\vy + \vX^\top\vX\bE\left[\vw\vw^\top\right] - 2\bE[\vw]^\top\vX^\top\vy \right) + b_0 \right)\\
+\end{align*}
+This shows that $q_{\beta}^*(\beta)$ has a Gamma form:
+\begin{align*}
+    q_{\beta}^*(\beta) &= \text{Gamma}(\beta | a, b)\\
+    \text{where, } a &= \frac{N}{2} + a_0\\
+    b &= \frac{1}{2} \text{Trace}\left(\vy^\top\vy + \vX^\top\vX\bE\left[\vw\vw^\top\right] - 2\bE[\vw]^\top\vX^\top\vy \right) + b_0
+\end{align*}
+\\ \\
+\noindent \textbf{3. } For $\alpha_d$:
+\begin{align*}
+    \log q_{\alpha_d}^*(\alpha_d) &= \bE_{q_{\vw, \beta, \alpha_1, \ldots, \alpha_{d-1}, \alpha_{d+1}, \ldots, \alpha_{D}}} \left[ \log p\left(\vy, \vw, \alpha, \beta| \vX\right) \right] \tag{Ignoring constants}
+    \\
+    &= \bE_{q_{\vw, \beta, \alpha_1, \ldots, \alpha_{d-1}, \alpha_{d+1}, \ldots, \alpha_{D}}} \left[ \left(e_0 - \frac{1}{2} \right) \log \alpha_d  - f_0 \alpha_d - \frac{w_d^2\alpha_d}{2}  \right]   \\
+    &= \left(\frac{1}{2} + e_0 - 1 \right) \log \alpha_d - \alpha_d \left( f_0 +  \frac{\bE[w_d^2]}{2} \right) 
+\end{align*}
+This shows that $q_{\alpha_d}^*(\alpha_d)$ has a Gamma form: 
+\begin{align*}
+    q_{\alpha_d}^*(\alpha_d) &= \text{Gamma}(\alpha_d | e_d, f_d)\\
+    \text{where, } e_d &=  \frac{1}{2} + e_0\\
+    f_d &=  f_0 +  \frac{\bE[w_d^2]}{2}
+\end{align*}
+Since $\vw \sim \cN(\boldsymbol{\mu}_{\vw}, \boldsymbol{\Sigma}_{\vw}), \beta \sim \text{Gamma}(\beta | a, b)$ and $\alpha_d \sim \text{Gamma}(\alpha_d | e_d, f_d)$, the required expectations are:
+\begin{equation*}
+\begin{split}
+    \bE[\vw] &= \boldsymbol{\mu}_{\vw}
+    \\\bE[\vw \vw^\top] &= \boldsymbol{\Sigma}_{\vw} + \boldsymbol{\mu}_{\vw} \boldsymbol{\mu}_{\vw}^\top
+    \\\bE[w_d^2] &= (\boldsymbol{\Sigma}_{\vw})_{dd} + (\boldsymbol{\mu}_{\vw})^2_{d} 
+    \\\bE[\beta] &= \frac{a}{b}
+    \\\bE[\alpha_d] &= \frac{e_d}{f_d} ~~ \forall d
+\end{split}
+\end{equation*}
+\\ \\
+\noindent Following is the final Mean-field VI algorithm:\\
+\begin{algorithm}[H]
+\textbf{Input:} $\vy$, $\vX$ and hyper-parameters $a_0, b_0, e_0, f_0$\\
+\SetAlgoLined
+ Set $e_d = e_0 + \frac{1}{2} ~ \forall d$ and $a = a_0 + \frac{N}{2}$\\
+ Initialize $b$ and ${f_d} ~~ \forall d$\\
+ \While{(NOT CONVERGED)} {
+    \begin{align}
+        \bE[\beta] &= \frac{a}{b}
+        \nonumber
+        \\
+        \bE[\alpha_d] &= \frac{e_d}{f_d} ~~ \forall d
+        \nonumber
+        \\ \boldsymbol{\Sigma}_{\textbf{w}} &= \left(\bE[\beta]\vX^\top\vX + \text{diag}(\bE[\alpha_1], \ldots, \bE[\alpha_D])\right)^{-1}
+        \nonumber
+        \\\boldsymbol{\mu}_{\vw} &= \boldsymbol{\Sigma}_{\textbf{w}} \left( \bE[\beta]\vX^\top\vy \right)
+        \nonumber
+        \\\bE[\vw] &= \boldsymbol{\mu}_{\vw} \nonumber
+        \\\bE[\vw \vw^\top] &= \boldsymbol{\Sigma}_{\vw} + \boldsymbol{\mu}_{\vw} \boldsymbol{\mu}_{\vw}^\top \nonumber
+        \\\bE[w_d^2] &= (\boldsymbol{\Sigma}_{\vw})_{dd} + (\boldsymbol{\mu}_{\vw})^2_{d} ~~ \forall d \nonumber
+        \\b &= \frac{1}{2} \text{Trace}\left(\vy^\top\vy + \vX^\top\vX\bE\left[\vw\vw^\top\right] - 2\bE[\vw]^\top\vX^\top\vy \right) + b_0
+        \nonumber
+        \\
+        f_d &= f_0 + \frac{\bE[w_d^2]}{2} ~~ \forall d
+        \nonumber
+    \end{align}  
+ }
+ Return $\left\{\boldsymbol{\mu}_{\vw}, \boldsymbol{\Sigma}_{\vw} \right\}, \left\{a, b\right\}, \left\{e_d, f_d\right\}_{d=1}^D$
+ \caption{Mean-field VI}
+\end{algorithm}
+
+\end{pmisolution}
+
+%%%%%%%%% PROBLEM-3 %%%%%%%%%%
+\begin{pmisolution}
+\noindent Given for $N$ i.i.d. observations $\{x_n\}_{n=1}^N$:
+\begin{equation*}
+    \begin{split}
+        \text{Likelihood model: } ~~~~~~~ p(x_n | \lambda_n) &= \text{Poisson}(x_n | \lambda_n) \\
+        \text{Prior on $\lambda_n$: } ~~~~~ p(\lambda_n | \alpha, \beta) &= \text{Gamma}(\lambda_n | \alpha, \beta) \\
+        \text{Prior on $\alpha$: } ~~~~~~~ p(\alpha | a,b) &= \text{Gamma}(\alpha | a,b) \\
+        \text{Prior on $\beta$: } ~~~~~~~ p(\beta | c,d) &= \text{Gamma}(\beta | c,d)
+    \end{split}
+\end{equation*}
+\\ \\
+\noindent \textbf{1. } Conditional Posterior of $\lambda_n$:
+\begin{align*}
+    p(\lambda_n | \vX, \lambda_{-n}, \alpha, \beta) &\propto p(\vX | \lambda_n) p(\lambda_n| \alpha, \beta) \tag{Using Bayes' rule}\\
+    &\propto p(x_n | \lambda_n) p(\lambda_n| \alpha, \beta) \tag{Since only $x_n$ depends on $\lambda_n$}\\
+    &\propto \frac{\exp(-\lambda_n)\lambda_n^{x_n}}{x_n!} \frac{\beta^{\alpha}}{\Gamma(\alpha)} \lambda_n^{\alpha-1} \exp{(-\beta \lambda_n)}\\
+    &\propto \lambda_n^{\alpha + x_n -1} \exp \left(-\left(\beta+1\right) \lambda_n\right)
+\end{align*}
+This gives the conditional posterior of $\lambda_n$ as
+\begin{equation*}
+p(\lambda_n | \vX, \lambda_{-n}, \alpha, \beta) = \text{Gamma}\left(\lambda_n \middle| \alpha + x_n, \beta+1 \right)
+\end{equation*}
+\\ \\
+\noindent \textbf{2. } Conditional Posterior of $\beta$:
+\begin{align*}
+    p(\beta |  \vX, \boldsymbol{\lambda}, \alpha) &\propto p(\boldsymbol{\lambda} | \alpha, \beta) p(\beta)\\
+    &\propto \prod_{n=1}^N p(\lambda_n | \alpha, \beta) p(\beta) \tag{Since $\lambda_n$s are i.i.d.}\\
+    &\propto \prod_{n=1}^N \left[ \frac{\beta^{\alpha}}{\Gamma(\alpha)} \lambda_n^{\alpha-1} \exp{(-\beta \lambda_n)} \right] \frac{d^{c}}{\Gamma(c)} \beta^{c-1} \exp{(-\beta d)}\\
+    &\propto \left[ \beta^{N \alpha} \exp{(-\beta \sum_{n=1}^N \lambda_n)} \right] \beta^{c-1} \exp{(-\beta d)}\\
+    &\propto \beta^{N \alpha + c - 1} \exp{\left(- \left(d + \sum_{n=1}^N \lambda_n\right)\beta\right)}
+\end{align*}
+This gives the conditional posterior of $\beta$ as
+\begin{equation*}
+p(\beta | \vX, \boldsymbol{\lambda}, \alpha) = \text{Gamma}\left(\beta \middle| N\alpha + c, d + \sum_{n=1}^N \lambda_n\right)
+\end{equation*}
+\\ \\
+\noindent \textbf{3. } Conditional Posterior of $\alpha$:
+\begin{align*}
+    p(\alpha| \vX , \boldsymbol{\lambda}, \beta) &\propto p(\boldsymbol{\lambda} | \alpha, \beta) p(\alpha)\\
+    &= \prod_{n=1}^N \left[ \frac{\beta^{\alpha}}{\Gamma(\alpha)} \lambda_n^{\alpha-1} \exp{(-\beta \lambda_n)} \right] 
+    \frac{b^{a}}{\Gamma(a)} \alpha^{a-1} \exp{(-\alpha b)}\\
+    &\propto \left[\frac{\beta^{n \alpha} \left(\prod_{n=1}^N \lambda_n \right)^{\alpha-1}}{\Gamma(\alpha)^N} \right] \alpha^{a-1} \exp{(-\alpha b)}
+\end{align*}
+This is not any standard known form. Hence, CPs for all the parameters except $\alpha$ are available in closed forms.
+\\ \\
+\noindent Following is the Gibbs sampling algorithm for this model:\\
+\begin{algorithm}[H]
+\SetAlgoLined
+\textbf{Input:} $\vX$ and hyper-parameters $a,b,c,d$\\
+ Initialize $\alpha^{(0)}, \beta^{(0)}$ \\
+ \For{$t=1, 2, \ldots, T$} {
+\begin{align}
+    \lambda_n^{(t)} &\sim \text{Gamma}\left(\lambda_n \middle|\alpha^{(t-1)} + x_n, \beta^{(t-1)} + 1\right) ~~ \forall n \nonumber
+    \\ \beta^{(t)} &\sim \text{Gamma}\left(\beta \middle|N\alpha^{(t-1)} +c , d+ \sum_{n=1}^N\lambda_n^{(t)}\right)
+    \nonumber
+    \\ \alpha^{(t)} &\sim p\left(\alpha \middle| \vX , \boldsymbol{\lambda}^{(t)}, \beta^{(t)}\right) \tag{Use any sampling method for this}
+\end{align}
+ }
+ Return $\left\{\lambda_n^{(t)}, \beta^{(t)}, \alpha^{(t)} \right\}_{t=1}^\top$
+ \caption{Gibbs Sampling}
+\end{algorithm}
+\end{pmisolution}
+
+
+%%%%%%%%% PROBLEM-4 %%%%%%%%%%
+\begin{pmisolution}
+\noindent Finding expectation of $r_{ij}$:
+\begin{align*}
+    \bE[r_{i j}] &= \bE\left[\vu_i^\top \vv_j + \epsilon_{i j}\right] \\
+    &= \bE\left[\vu_i^\top \vv_j\right] + \bE\left[\epsilon_{i j}\right]
+\end{align*}
+Since $\epsilon_{ij} \sim \cN\left(\epsilon_{ij} \middle| 0, \beta^{-1} \right)$, hence $\bE[\epsilon_{ij}] = 0$ and using Monte-Carlo approximation on the known samples $\vU^{(s)} = \left\{\vu_i^{(s)}\right\}_{i=1}^{N}$ and $\vV^{(s)} = \left\{\vv_j^{(s)}\right\}_{j=1}^{N}$, we can write the expectation as:
+\begin{equation*}
+    \bE[r_{ij}] \approx \frac{1}{S}\sum_{s=1}^{S}\vu_i^{(s)^\top} \vv_j^{(s)}
+\end{equation*}
+\\ \\
+\noindent Finding variance of $r_{ij}$:\\
+We know that $\text{var}(r_{ij}) = \bE\left[r_{ij}^2\right] - \bE\left[r_{ij}\right]^2$. Finding $\bE\left[r_{ij}^2\right]$:
+\begin{align*}
+    \bE\left[r_{ij}^2\right] &= \bE\left[\left(\vu_i^\top \vv_j + \epsilon_{i j}\right)^2\right] \\
+    &= \bE\left[\left(\vu_i^\top \vv_j\right)^2 + \epsilon_{i j}^2 + 2\epsilon_{i j}\left(\vu_i^\top \vv_j\right)\right] \\
+    &= \bE\left[\left(\vu_i^\top \vv_j\right)^2\right] + \bE\left[\epsilon_{i j}^2\right] + 2\bE\left[\epsilon_{i j}\right]\bE\left[\vu_i^\top \vv_j\right]  \tag{$\vu_i^\top \vv_j$ and $\epsilon_{i j}$ are independent}\\
+    &= \bE\left[\left(\vu_i^\top \vv_j\right)^2\right] + \beta^{-1} \tag{$\bE\left[\epsilon_{i j}\right] = 0 , \bE\left[\epsilon_{i j}^2\right] = \beta^{-1}$}\\
+    &\approx \frac{1}{S}\sum_{s=1}^S \left(\vu_i^{(s)^\top} \vv_j^{(s)}\right)^2 + \beta^{-1} \tag{Using Monte-Carlo approximation}
+\end{align*}
+Hence, we can write the variance as:
+\begin{align*}
+    \text{var}(r_{i j}) &= \bE\left[r_{ij}^2\right] - \bE[r_{i j}]^2\\
+    \text{var}(r_{i j}) &\approx \frac{1}{S}\sum_{s=1}^S \left(\vu_i^{(s)^\top} \vv_j^{(s)}\right)^2 + \beta^{-1} - \frac{1}{S^2}\left[\sum_{s=1}^S \vu_i^{(s)^\top} \vv_j^{(s)}\right]^2
+\end{align*}
+\end{pmisolution}
+
+
+%%%%%%%%% PROBLEM-5 %%%%%%%%%%%
+\begin{pmisolution}
+\noindent Given: $\Tilde{p}(x) = \exp\left(\sin(x)\right)$ and the proposal distribution $q(x) = \cN\left(x \middle|0, \sigma^2\right)$.\\
+We need to find an optimal $M$ such that $Mq(x) \geq \Tilde{p}(x)$ for $x \in [-\pi, \pi]$:
+\begin{align}
+    M &\geq \frac{\Tilde{p}(x)}{q(x)}\nonumber\\
+    &\geq \frac{\exp\left(\sin(x)\right)}{\frac{1}{\sqrt{2 \pi \sigma^2}} \exp \left( \frac{- x^2}{2 \sigma^2} \right)}\nonumber\\
+    &\geq \sqrt{2 \pi \sigma^2} \exp{\left(\sin(x) +  \frac{ x^2}{2 \sigma^2} \right)}\nonumber
+\end{align}
+Since $\sin(x) \leq 1$ and $x^2 \leq \pi^2$ (in the given domain of $x$), we get
+\begin{align}
+   \frac{\Tilde{p}(x)}{q(x)} &\geq \sqrt{2 \pi \sigma^2} \exp{\left(1 +  \frac{ \pi^2}{2 \sigma^2} \right)}\nonumber
+\end{align}
+For optimal value of $M$, we want that $Mq(x)$ envelopes $\Tilde{p}(x)$ tightly, hence
+\begin{equation*}
+    M = \sqrt{2 \pi \sigma^2} \exp{\left(1 +  \frac{ \pi^2}{2 \sigma^2} \right)}
+\end{equation*}
+The histogram of 10000 samples drawn from $p(x)$ for $\sigma=2$ is:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{"rejection_sampling.pdf"}
+    \caption{Histogram of 10000 samples drawn from $p(x)$ for $\sigma=2$}
+    \label{fig:plt}
+\end{figure}
+\end{pmisolution}
+
+
+\end{document}

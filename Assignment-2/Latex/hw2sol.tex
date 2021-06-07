@@ -1,0 +1,391 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{pmisubmit}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{bbm}
+
+\begin{document}
+
+\initpmisubmision{2} % assignment number
+{Bholeshwar Khurana}   % your name
+{170214}	% your roll number
+
+
+%%%%%%%%%%%%% QUESTION 1 %%%%%%%%%%
+\begin{pmisolution}
+\noindent \textbf{(1.) } Equation (4) in the paper defines "expected complete data log posterior". This quantity means the expected value of the posterior obtained if we had the complete data.
+\begin{equation}
+\label{eqn1_1}
+\begin{split}
+    \bE_{\cY_p}\left[ \log p\left(\theta \middle| \cD_0 \cup (\cX_p, \cY_p)\right) \right] &= \log p(\theta|\cD_0) + \sum_{m=1}^{M} \cL_m(\theta) \\
+    \text{where, } \cL_m(\theta) &= \left( \bE_{y_m} \left[\log p(y_m | x_m, \theta)\right] + \bH[y_m | x_m, \cD_0] \right)
+\end{split}
+\end{equation}
+Here, $\cD_0$ is the labeled dataset, $\cX_p = \{x_m\}_{m=1}^{M}$ is the unlabeled pool set and $\cY_p = \{y_m\}_{m=1}^{M}$ are the corresponding labels obtained using an oracle labeling mechanism.
+
+Hence, the complete dataset would be $\cD_0 \cup (\cX_p, \cY_p)$ and the complete data log posterior would be $\log p\left(\theta \middle| \cD_0 \cup (\cX_p, \cY_p)\right)$. The complete data posterior is optimal for Bayesian learning, however it would be costly to obtain it. The above equation tries to find the "expected" value of the complete data log posterior.
+
+A batch $\cD'$ is obtained such that the updated log posterior, i.e. $p\left(\theta \middle| \cD_0 \cup \cD'\right)$ best approximates the "expected complete data log posterior" given in the equation \ref{eqn1_1}.
+
+The sparse approximation based objective function is 
+\begin{equation}
+\label{eqn1_2}
+    \vw^* = \min_\vw || \cL - \cL(\vw) || ^2 \text{~~ subject to ~~} w_m \in \{0,1\} ~~ \forall m, \sum_m \mathbbm{1}_m \leq b
+\end{equation}
+Here, $\cL = \sum_m \cL_m$ and $\cL(\vw) = \sum_m w_m\cL_m$, $b$ is a query budget and $w_m \in \{0,1\}^M$ is a weight vector indicating which points to include in our batch $\cD'$.
+
+Since the first term in equation \ref{eqn1_1} only depends on $\cD_0$, hence we need to approximate $\sum_{m=1}^{M} \cL_m(\theta)$ such that the resulting posterior is close to the "expected complete data log posterior". Since $\cL$ represents the corresponding $\cL_m(\theta)$ term for the complete data, hence finding an $\cL(\vw)$ close to $\cL$ would be a good approximation. This is ensured by minimizing $|| \cL - \cL(\vw) ||^2$, i.e. the equation \ref{eqn1_2}.
+\\ \\
+\noindent \textbf{(2.) } The sparse approximation based objective (equation \ref{eqn1_2}) is difficult to optimize. The following relaxed objective is minimized instead in the paper:
+\begin{equation}
+\label{eqn1_3}
+    \vw^* = \min_\vw (\textbf{1} - \vw)^\top \vK (\textbf{1} - \vw) \text{~~ subject to ~~} w_m \geq 0 ~~ \forall m, \sum_m w_m\sigma_m = \sigma
+\end{equation}
+Here, $\sigma_m = || \cL_m ||, \sigma = \sum_m\sigma_m$ and $\vK \in \bR^{M\timesM}$ is a Kernel matrix with $(\vK)_{mn} = \langle\cL_m, \cL_n \rangle$.
+
+Equation \ref{eqn1_3} is different from equation \ref{eqn1_2} in the respect that the cardinality constraint $ || \cL - \cL(\vw) || ^2$ is replaced with the polytope constraint $(\textbf{1} - \vw)^\top \vK (\textbf{1} - \vw)$ and the constraint of $w_m \in \{0,1\}$ is relaxed to $w_m \geq 0$. This new relaxed optimization is solved using the Frank-Wolfe algorithm\footnote{Marguerite Frank and Philip Wolfe. An algorithm for quadratic programming. Naval Research Logistics Quarterly, 3(1-2):95–110, 1956.}.
+
+The main computation step in their algorithm is 
+\begin{equation*}
+    \left\langle \cL - \cL(\vw), \frac{1}{\sigma_n}\cL_n \right\rangle = \frac{1}{\sigma_n} \sum_{m=1}^N (1 - w_m)\langle \cL_m, \cL_n \rangle
+\end{equation*}
+At each iteration, the algorithm uses greedy method to find the vector $\cL_p$ which minimizes the residual error $(\cL - \cL(\vw))$. The weights are then updated accordingly. After $b$ iterations the algorithm returns the optimal weights $\vw^*$. Since our original weights were binary, i.e. 0 or 1, hence we set $\Tilde{w}_m^* = 1$ if $w_m^* > 0$ and 0 otherwise. Hence, the final AL batch becomes $\cD' = \{x_m \in \cX_p | w_m^* > 0\}$.
+\\ \\
+\noindent The paper employs different choices of the inner product $\langle\cL_n, \cL_m \rangle_{\hat{\pi}} = \bE_{\hat{\pi}}[\langle \cL_n, \cL_m \rangle]$ where $\hat{\pi}$ is the current posterior $p(\theta|\cD_0)$.
+
+They have defined the weighted Fisher inner product which requires taking gradient of the expected log-likelihood terms w.r.t. the parameters:
+\begin{equation*}
+    \langle\cL_n, \cL_m \rangle_{\hat{\pi}, \cF} = \bE_{\hat{\pi}}\left[ \nabla_\theta \cL_n(\theta)^\top \nabla_\theta\cL_m(\theta) \right]
+\end{equation*}
+
+Another type of inner product, the weighted Euclidean inner product, is based on the marginal likelihood of the data points:
+\begin{equation*}
+    \langle\cL_n, \cL_m \rangle_{\hat{\pi}, 2} = \bE_{\hat{\pi}}\left[ \cL_n(\theta) \cL_m(\theta) \right]
+\end{equation*}
+\\ \\
+\noindent \textbf{(3.) } The acquisition function proposed in the paper has a closed
+form expression for two types of models: (a) Bayesian linear regression and (b) Probit regression.
+\\ \\
+\noindent For other type of models where the acquisition function won’t be available, the paper proposes to use random feature projections. They have considered projection for the weighted Euclidean inner product:
+\begin{equation*}
+    \hat{\cL}_n = \frac{1}{\sqrt{J}}[\cL_n(\theta_1), \cdots , \cL_n(\theta_J)]^\top, ~~~~ \theta_j \sim \hat{\pi}
+\end{equation*}
+Here, $\hat{\cL}_n$ represents the J-dimensional projection of $\cL_n$ in Euclidean space. Using this projection the paper approximates the inner products as
+\begin{equation*}
+    \langle \cL_n, \cL_m \rangle_{\hat{\pi}, 2} \approx \hat{\cL}_n^\top \hat{\cL}_m
+\end{equation*}
+By using this approximation, we can get closed form expressions for models which don't have acquisition function.
+\end{pmisolution}
+
+
+%%%%%%%%%% QUESTION 2 %%%%%%%%%%%%%%%%%
+\begin{pmisolution} 
+\noindent We are given $N$ scalar observations $x_1, x_2, .., x_N$ drawn i.i.d. from $\mathcal{N}(x|\mu, \beta^{-1})$, where $\mu \sim \mathcal{N}(\mu| \mu_0, s_0)$, and $\beta \sim Gamma(\beta| a,b)$.
+\\We can write the conditional posterior for $\mu$ as
+\begin{align}
+    p(\mu|\textbf{X}, \beta) &= \frac{p(\textbf{X}|\mu, \beta)p(\mu)}{\int p(\textbf{X}|\mu, \beta)p(\mu)d\mu}
+    \nonumber
+    \\ &\propto p(\textbf{X}|\mu, \beta)p(\mu)
+    \nonumber
+    \\ &= \mathcal{N}(x|\mu, \beta^{-1}) \mathcal{N}(\mu| \mu_0, s_0)
+    \nonumber
+\end{align}
+Using completing the squares trick, we can write the posterior for $\mu$ as
+\begin{align}
+    p(\mu|\textbf{X}, \beta) &= \mathcal{N}(\mu| \mu_N, s_N^{-1})
+    \nonumber
+    \\ \text{where, } \frac{1}{s_N} &= N\beta + \frac{1}{s_0}
+    \nonumber
+    \\ \mu_N &= \frac{1}{1+Ns_0\beta }\mu_0 + \frac{Ns_0\beta}{Ns_0\beta+1}\Bar{x}
+    \tag{$\Bar{x} = \frac{\sum_{n=1}^Nx_n}{N}$}
+\end{align}
+Similarly, we can write the conditional posterior for $\beta$ as
+\begin{align}
+    p(\beta|\textbf{X}, \mu) &\propto p(\textbf{X}|\mu, \beta)p(\beta)
+    \nonumber
+    \\ &= \mathcal{N}(x|\mu, \beta^{-1}) Gamma(\beta| a,b)
+    \nonumber
+\end{align}
+Using the properties of Gaussian model and the conjugacy of Gaussian and Gamma functions, we can write the posterior for $\beta$ as
+\begin{equation*}
+    p(\beta|\textbf{X}, \mu) = Gamma \left(\beta \middle| a + \frac{N}{2}, \frac{\Sigma_{n=1}^{N} (x_n - \mu)^2}{2} + b \right)
+\end{equation*}
+As we obtained the conditional posteriors for $\mu$ and $\beta$ in closed forms, we can use Gibbs sampling algorithm to approximate the joint posterior of $\mu$ and $\beta$ by continuously drawing samples from their conditional posteriors. Following is the algorithm:\\
+\begin{algorithm}[H]
+\SetAlgoLined
+% \KwResult{Write here the result }
+ Initialize $\mu_0$\;
+ \For{$s = 1, 2, \cdots, S$} {
+ Sample $\beta^{(s)}$ from the distribution $p(\beta|\textbf{X}, \mu^{(s-1)}$)\;
+ Sample $\mu^{(s)}$ from the distribution $p(\mu|\textbf{X}, \beta^{(s)}$)\;
+ }
+ \caption{Gibbs sampling}
+\end{algorithm}
+The samples $\{\mu^{(s)}, \beta^{(s)}\}_{s=1}^S$ will form the joint posterior $p(\mu, \beta|\textbf{X})$.
+
+\end{pmisolution}
+
+%%%%% QUESTION 3 %%%%%%%%%
+\begin{pmisolution}
+
+\noindent \textbf{(1.) } The given prior on $w$ helps in sparse learning of the weight parameters. However, the level of sparsity induced is of two types depending on $\gamma_d$, one with higher precision (when $\gamma_d = 0$) while the other with lower precision (when $\gamma_d = 1$).
+\\ \\
+\noindent \textbf{(2.) } Finding the \textbf{conditional posterior over the latent variable} ($w$).\\ Using Baye's rule, we can write
+\begin{align}
+    p(\textbf{w}|\textbf{y}, \textbf{X}, \sigma, \gamma) &\propto p(\textbf{y}|\textbf{w}, \textbf{X}, \sigma) p(\textbf{w}|\sigma, \gamma)
+    \nonumber
+\end{align}
+Since $\vy = \vX\vw + \mathbf{\epsilon}$, we can write the likelihood as $p(\textbf{y}|\textbf{w}, \textbf{X}, \sigma) = \mathcal{N}(\textbf{y}|\textbf{Xw}, \sigma^2\textbf{I}_N)$. Also given the prior $p(\textbf{w}|\sigma, \gamma) = \mathcal{N}(0, \sigma^2\textbf{K})$, where $\textbf{K}$ is a $D \times D$ diagonal matrix with $(\vK)_{ii} = \kappa_{\gamma_i}$ and $\kappa_{\gamma_d} = \gamma_d v_1 + (1-\gamma_d) v_0$. Using completing the square trick, we can write the conditional posterior as
+\begin{equation}
+\begin{split}
+    p(\textbf{w}|\textbf{y}, \textbf{X}, \sigma, \gamma) &= \mathcal{N}(\textbf{w}| \boldsymbol{\mu}_w, \boldsymbol{\Sigma}_w)
+    \\ \text{where, } \boldsymbol{\Sigma_w} &= \sigma^2 [\textbf{K}^{-1} + \textbf{X}^\top\vX] ^{-1}
+    \\ \boldsymbol{\mu}_w &= \frac{1}{\sigma^2} \boldsymbol{\Sigma}_w\textbf{X}^\top\textbf{y}
+\end{split}
+\end{equation}
+
+\noindent Finding the \textbf{Expectation of CLL}.\\
+The complete data log likelihood (CLL) can be written as
+\begin{equation}
+\label{eqn3_2}
+\begin{split}
+    \log p(\textbf{w}, \textbf{y}|\textbf{X}, \sigma, \gamma) &= \log p(\textbf{y}|\textbf{X}, \textbf{w}, \sigma) + \log p(\textbf{w}| \sigma, \gamma)
+    \\ &= -\frac{1}{2\sigma^2}(\textbf{y} - \textbf{Xw})^\top(\textbf{y} - \textbf{Xw}) - \frac{N+D}{2} \log (2\pi\sigma^2) - \frac{1}{2\sigma^2}\textbf{w}^\top\textbf{K}^{-1}\textbf{w} \\& ~~~~ - \frac{1}{2} \sum_{d=1}^D \log (\kappa_{\gamma_d})    
+\end{split}
+\end{equation}
+The expected CLL can be written as
+
+\begin{equation*}
+    \bE[CLL] = \bE[\log p(\textbf{w}, \textbf{y}|\textbf{X}, \sigma, \gamma)]
+\end{equation*}
+Using equation \ref{eqn3_2}, it can be written as
+\begin{equation}
+\label{eqn3_3}
+    \begin{split}
+    \bE[CLL] &= -\frac{1}{2\sigma^2} \left(\textbf{y}^\top\textbf{y} - 2\textbf{y}^\top\textbf{X}\bE[\textbf{w}] + \text{Tr}\left[(\textbf{X}^\top\vX +\textbf{K}^{-1})\bE[\textbf{ww}^\top]\right] \right) 
+    \\& ~~~~ - \frac{N+D}{2} \log (2\pi\sigma^2) - \frac{1}{2} \sum_{d=1}^D  \log (\kappa_{\gamma_d})
+    \end{split}
+\end{equation}
+Since the posterior of $\vw$ is Gaussian, we can directly write the expectations $\bE[\vw]$ and $\bE[\vw\vw^\top]$ as
+\begin{equation}
+\label{eqn3_4}
+\begin{split}
+    \bE[\textbf{w}] &= \boldsymbol{\mu}_w = \left(\textbf{X}^\top\textbf{X} + \textbf{K}^{-1}\right) ^{-1}\textbf{X}^\top\textbf{y}
+    \\ \bE[\textbf{ww}^\top] &= \boldsymbol{\Sigma}_w + \boldsymbol{\mu}_w\boldsymbol{\mu}_w^\top = \sigma^2\left(\textbf{X}^\top\textbf{X} + \textbf{K}^{-1}\right)^{-1} + \textbf{y}^\top\textbf{X}\left(\textbf{X}^\top\textbf{X} + \textbf{K}^{-1}\right)^{-2}\textbf{X}^\top\textbf{y} 
+\end{split}
+\end{equation}
+\newpage
+\noindent Finding the \textbf{MAP estimates of the parameters} $\sigma^2, \gamma \text{ and } \theta$
+\begin{align}
+    \sigma^2, \gamma, \theta &= \argmax_{\sigma^2, \theta, \gamma} \left\{ \bE\left[\log \left(p\left(\sigma^2, \gamma, \theta|\textbf{y}, \textbf{w}, \textbf{X}\right)\right)\right] \right\}
+    \nonumber
+\end{align}
+Since the posterior over the parameters $p(\sigma^2, \gamma, \theta|\textbf{y}, \textbf{w}, \textbf{X}) \propto p(\textbf{w}, \textbf{y}|\textbf{X}, \sigma, \gamma).p(\sigma^2, \gamma, \theta)$, we can write the expectation of the log posterior as $\bE[\log (p(\sigma^2, \gamma, \theta|\textbf{y}, \textbf{w}, \textbf{X}))] = \bE[CLL] + \log p(\sigma^2, \gamma, \theta)$, after ignoring the constants. Hence, the MAP estimate becomes
+\begin{equation}
+\label{eqn3_5}
+    \sigma^2, \gamma, \theta = \argmax_{\sigma^2, \theta, \gamma}\left\{\bE[CLL] + \log \left(p(\sigma^2, \gamma, \theta)\right)\right\}
+\end{equation}
+Given the prior over the parameters $p(\sigma^2) = IG \left(\frac{\nu}{2}, \frac{\nu\lambda}{2}\right)$, $p(\theta) = Beta(a_0, b_0)$ and $p(\gamma_d|\theta) = Bernoulli(\theta)$. We can write the joint prior over the parameters as
+\begin{equation}
+\label{eqn3_6}
+\begin{split}
+    p(\sigma^2, \gamma, \theta) &= p(\sigma^2) \left \{ \prod_{d=1}^Dp(\gamma_d|\theta) \right\} p(\theta) 
+    \\ \log p \left(\sigma^2, \gamma, \theta \right) &= \log \left( p(\sigma^2) \right) + \sum_{d=1}^D \log \left( p(\gamma_d|\theta) \right) + \log \left( p(\theta) \right)
+\end{split}
+\end{equation}
+
+\noindent Plugging the values from equations \ref{eqn3_3}, \ref{eqn3_6} in equation \ref{eqn3_5} and differentiating w.r.t. each parameter, we can find the MAP estimate of the parameters as follows:
+\\ Taking partial derivative w.r.t. $\sigma^2$ and ignoring other terms:
+\begin{align}
+    0 &= \frac{\partial \left( \bE[CLL] + \log \left(p(\sigma^2, \gamma, \theta)\right) \right)}{\partial (\sigma^2)} 
+    \nonumber
+    \\0 &=\frac{1}{2\sigma^4}\left(\textbf{y}^\top\textbf{y} - 2\textbf{y}^\top\textbf{X}\bE[\textbf{w}]+ \text{Tr}\left[(\textbf{X}^\top\textbf{X} +\textbf{K}^{-1})\bE[\textbf{ww}^\top]\right]\right)- \frac{N+D}{2\sigma^2} - \frac{1}{\sigma^2}\left(\frac{\nu}{2} + 1\right) + \frac{\nu\lambda}{2\sigma^4}
+    \nonumber
+    \\\sigma^2_\text{MAP} &= \frac{\textbf{y}^\top\textbf{y} - 2\textbf{y}^\top\textbf{X}\bE[\textbf{w}]+ \text{Tr}\left[(\textbf{X}^\top\textbf{X} +\textbf{K}^{-1})\bE[\textbf{ww}^\top]\right]  + \nu\lambda}{N+D+\nu+2}
+    \nonumber
+\end{align}
+\\
+We don't need to take partial derivative w.r.t $\gamma_d$ since it takes only binary values. Collecting $\gamma_d$ terms and maximizing w.r.t. it:
+\begin{align}
+    \gamma_d &= \argmax_{\gamma_d \in \{0,1\}}\left\{\bE[CLL] + \log p(\sigma^2, \gamma, \theta) \right\}
+    \nonumber
+    \\ \gamma_{d_\text{MAP}}&=\argmax_{\gamma_d \in \{0,1\}} \left\{-\frac{1}{2\sigma^2\kappa_{\gamma_d}}(\bE[\textbf{ww}^\top])_{d,d} - \frac{1}{2} \log \left(\kappa_{\gamma_d}\right) + \gamma_d \log \theta + (1 - \gamma_d)\log(1 - \theta)\right\}
+    \nonumber
+    \\ \mathbf{\gamma}_\text{MAP} &= [\gamma_0, \gamma_1, \cdots, \gamma_D]
+    \nonumber
+\end{align}
+\\
+Taking partial derivative w.r.t. $\theta$ and ignoring other terms:
+\begin{align}
+    0 &= \frac{\partial \left( \bE[CLL] + \log \left(p(\sigma^2, \gamma, \theta)\right) \right)}{\partial (\theta)}
+    \nonumber
+    \\&= \frac{1}{\theta}\left(\sum_{d=1}^D\gamma_d + a_0 -1\right) - \frac{1}{1-\theta}\left(\sum_{d=1}^D(1- \gamma_d) + b_0 - 1\right)
+    \nonumber
+    \\ \theta_\text{MAP} &= \frac{\sum_{d=1}^D\gamma_d + a_0 -1}{D + a_0 + b_0 -2}
+    \nonumber
+\end{align}
+
+\noindent The final EM algorithm is given in Algorithm \ref{algo2}.
+\\ \\
+\begin{algorithm}[H]
+\label{algo2}
+\SetAlgoLined
+% \KwResult{Write here the result }
+ Initialize \{$\sigma^2, \gamma, \theta\} \leftarrow \{\sigma^{2^{(0)}}, \gamma^{(0)}, \theta^{(0)}\}$\\
+ $\textbf{K}^{(0)} \leftarrow$ diagonal matrix with $(\vK^{(0)})_{ii} = \kappa^{(0)}_{\gamma_i}$ and $\kappa^{(0)}_{\gamma_d} = \gamma_d^{(0)} v_1 + (1-\gamma_d^{(0)}) v_0$ \\
+ \For{$t = 0,1, \cdots, T-1$} {
+ (a) Update the posterior of latent variable \textbf{w} as:
+    \begin{align}
+        p\left(\textbf{w}^{(t+1)}\middle|\textbf{y}, \textbf{X}, \sigma^{(t)}, \gamma^{(t)}\right) &= \mathcal{N}\left(\textbf{w}^{(t+1)}\middle| \boldsymbol{\mu}_w^{(t)}, \boldsymbol{\Sigma}_w^{(t)}\right)
+    \nonumber
+    \\ \boldsymbol{\Sigma_w}^{(t+1)} &= (\sigma^{2})^{(t)} \left((\textbf{K}^{(t)})^{-1} + \textbf{X}^\top\textbf{X}\right) ^{-1}
+    \nonumber
+    \\ \boldsymbol{\mu}_w^{(t+1)} &= \frac{1}{(\sigma^{2})^{(t)}} \boldsymbol{\Sigma}_w^{(t+1)}\textbf{X}^\top\textbf{y}
+    \nonumber
+    \end{align}
+ (b) Update the expectations as:
+ \begin{align}
+     \bE[\vw]^{(t+1)} &=  \boldsymbol{\mu}_w^{(t+1)}
+     \nonumber
+     \\ \bE[\textbf{ww}^\top]^{(t+1)} &= \boldsymbol{\Sigma}_w^{(t+1)} + \boldsymbol{\mu}_w^{(t+1)}\boldsymbol{\mu}_w^{{(t+1)}^\top}
+     \nonumber
+ \end{align}
+ (c) Update the parameters as:
+ \begin{align}
+        (\sigma^2)^{(t+1)} &= \frac{\textbf{y}^\top\textbf{y} - 2\textbf{y}^\top\textbf{X}\bE[\textbf{w}]^{(t+1)}+ \text{Tr}\left[\left(\textbf{X}^\top\textbf{X} +\left(\textbf{K}^{(t)}\right)^{-1}\right)\bE[\textbf{ww}^\top]^{(t+1)}\right]  + \nu\lambda}{N+D+\nu+2}
+        \nonumber
+        \\\theta^{(t+1)} &= \frac{\sum_{d=1}^D\gamma_d^{(t)} + a_0 -1}{D + a_0 + b_0 -2}
+    \nonumber
+        \\\gamma_d^{(t+1)}&=\argmax_{\gamma_d \in \{0,1\}} \{-\frac{1}{2(\sigma^2)^{(t+1)}\kappa_{\gamma_d}^{(t)}}\bE[\textbf{ww}^\top]^{(t+1)}_{(d,d)} - \frac{1}{2} \log \left(\kappa_{\gamma_d}^{(t)}\right) + \gamma_d^{(t)} \log \left(\theta^{(t+1)}\right) 
+        \nonumber
+        \\& \hspace{65}+(1 - \gamma_d^{(t)})\log\left(1 - \theta^{(t+1)}\right)\}
+    \nonumber
+    \end{align}
+ (d) Update the Kernel matrix $\vK$ as:
+ \begin{equation*}
+ (\vK^{(t+1)})_{ii} = \kappa^{(t+1)}_{\gamma_i} \text{ and } \kappa^{(t+1)}_{\gamma_d} = \gamma_d^{(t+1)} v_1 + (1-\gamma_d^{(t+1)}) v_0
+ \end{equation*}
+ }
+ Return $p\left(\textbf{w}|\textbf{y}, \textbf{X}, \sigma^{(T-1)}, \gamma^{(T-1)}\right)$ and $\{\gamma, \sigma^2, \theta\} = \{\gamma^{(T)}, (\sigma^2)^{(T)}, \theta^{(T)}\}$
+ \caption{EM Algorithm}
+\end{algorithm}
+
+
+\end{pmisolution}
+
+
+%%%%%%% QUESTION 4 %%%%%%%%%%%%%%
+\begin{pmisolution}
+\noindent \textbf{(1.) } Given the likelihood model $p(y_n|\textbf{x}_n, \textbf{f}) = \mathcal{N}(y_n|f(\textbf{x}_n), \sigma^2)$ for each observation. Assuming i.i.d. observations, the likelihood model can be written as
+\begin{equation*}
+    \begin{split}
+        p(\textbf{y}|\textbf{X}, \textbf{f}) &= \prod_{n=1}^{N}\mathcal{N}(y_n|f(\textbf{x}_n), \sigma^2) \\
+        &= \mathcal{N}\left(\textbf{y}\middle|\textbf{f}, \sigma^2 \textbf{I}_N\right)
+    \end{split}
+\end{equation*}
+Also given the prior
+\begin{equation*}
+    p(\textbf{f}) = \mathcal{N}(\textbf{0}, \textbf{K})
+\end{equation*}
+where $\textbf{f} = [f(\textbf{x}_1), f(\textbf{x}_2)...,f(\textbf{x}_N)]^T$ and \textbf{K} is a $N \times N$ matrix with entries $\textbf{K}_{nm} = \kappa(\textbf{x}_n, \textbf{x}_m)$
+
+\noindent Using Baye's rule, we can write the GP posterior as
+\begin{equation*}
+p(\textbf{f}|\textbf{y}) \propto p(\textbf{y}|\textbf{X}, \textbf{f})p(\textbf{f})    
+\end{equation*}
+Using the standard properties of Gaussian model, we can write the GP posterior as
+\begin{align}
+    p(\textbf{f}|\textbf{y}) &= \mathcal{N}(\textbf{f}|\boldsymbol{\mu}, \boldsymbol{\Sigma}) \\
+    \nonumber
+    \text{where, } \boldsymbol{\mu} &= (\sigma^2\textbf{K}^{-1}+\textbf{I}_N)^{-1}\textbf{y} 
+    \nonumber
+    \\\boldsymbol{\Sigma}&=(\sigma^2\textbf{K}^{-1}+\textbf{I}_N)^{-1}\sigma^2
+    \nonumber
+\end{align}
+\\ \\
+\noindent \textbf{(2.) } Figure \ref{fig:plt} contains the required plots.
+
+We observe that as the value of $l$ increases, the random sample from prior becomes more smooth. As we see that for smaller values of $l$, i.e. $l =0.2, 0.5$, the mean of the GP posterior is noisy but close to the true function $\sin(x)$. For $l=1,2$, the mean of the posterior is almost close to the true function and fits well. For large values of $l$, i.e. $l=10$, the mean of the posterior varies significantly from the true function. 
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{"Q4_2.pdf"}
+    \caption{Plots for (a) random sample from the GP prior, (b) mean of the GP posterior and (c) true function $\sin(x)$, for different values of $l$.}
+    \label{fig:plt}
+\end{figure}
+\end{pmisolution}
+%%%%%%%% QUESTION 5 %%%%%%%%%
+\begin{pmisolution}
+\noindent \textbf{(1.)} Given the likelihood with pseudo training data $(\vZ, \vt)$,
+\begin{equation*}
+p(f_n|\textbf{x}_n, \textbf{Z}, \textbf{t}) = \mathcal{N}(f_n|\Tilde{\vk}_n^\top\Tilde{\vK}^{-1}\vt, \kappa(\vx_n, \vx_n) - \Tilde{\vk}_n^\top\Tilde{\vK}^{-1}\Tilde{\vk}_n)
+\end{equation*}
+Here, $\Tilde{\vK}$ is the $M \times M$ kernel matrix of the pseudo inputs $\vZ$ and $\Tilde{\vk}_n$ is the $M \times 1$ vector of kernel based similarities of $x_n$ with each of the pseudo inputs $z_1, \cdots , z_M$.\\
+Assuming i.i.d. observations, we can write the likelihood as
+\begin{equation}
+\label{eqn5_1}
+\begin{split}
+    p(\textbf{f}|\textbf{X}, \textbf{Z}, \textbf{t}) &= \prod_{n=1}^N p(f_n|\textbf{x}_n, \textbf{Z}, \textbf{t}) \\
+    &= \mathcal{N}(\textbf{f}|\textbf{P}\Tilde{\vK}^{-1}\textbf{t}, \boldsymbol{\Lambda})
+\end{split}
+\end{equation}
+Here, $\vP$ is a $N \times M$ matrix with $(\vP)_{ij} = \kappa(\vx_i, \vz_j)$ and $\boldsymbol{\Lambda}$ is a $N \times N$ diagonal matrix with $(\boldsymbol{\Lambda})_{ii} = \kappa(\textbf{x}_i, \textbf{x}_i)- \Tilde{\textbf{k}}_n^\top\Tilde{\vK}^{-1}\Tilde{\textbf{k}}_n$.\\
+We can write the posterior predictive distribution for the output $y_*$ as:
+\begin{equation*}
+    p(y_{*}|\textbf{x}_{*}, \textbf{X}, \textbf{f}, \textbf{Z}) = \int p(y_{*}|\textbf{x}_{*}, \textbf{X}, \textbf{f}, \textbf{Z}, \textbf{t})p(\textbf{t}|\textbf{X}, \textbf{f}, \textbf{Z}) d\textbf{t}    
+\end{equation*}
+Using Baye's rule, we can write the posterior over $\vt$ as
+\begin{equation}
+\label{eqn5_2}
+p(\textbf{t}|\textbf{X}, \textbf{f}, \textbf{Z}) \propto p(\textbf{f}|\textbf{X}, \textbf{Z}, \textbf{t})p(\textbf{t}|\textbf{Z})
+\end{equation}
+Since the pseudo training data is generated using Gaussian process, hence we can write
+\begin{equation}
+\label{eqn5_3}
+     p(\textbf{t}|\textbf{Z}) = \mathcal{N}(\textbf{t}|0, \Tilde{\vK})
+\end{equation}
+Using equations \ref{eqn5_1}, \ref{eqn5_2}, \ref{eqn5_3} and the knowledge of Gaussians, we can write the posterior over $t$ as
+\begin{equation*}
+\begin{split}
+    p(\textbf{t}|\textbf{X}, \textbf{f}, \textbf{Z}) &= \mathcal{N}(\textbf{t}| \boldsymbol{\mu}_{\boldsymbol{t}|\boldsymbol{f}}, \boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}) \\
+    \text{where, } \boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}  &= (\Tilde{\vK}^{-1}\textbf{P}^\top\boldsymbol{\Lambda}^{-1}\textbf{P}\Tilde{\vK}^{-1})^{-1}  \\
+    \boldsymbol{\mu}_{\boldsymbol{t}|\boldsymbol{f}} &= \boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}\Tilde{\vK}^{-1}\textbf{P}^\top\boldsymbol{\Lambda}^{-1}\textbf{f}
+\end{split}
+\end{equation*}
+Since we have a noiseless setting, i.e. $y_* = f_*$, we can write $f_* = \Tilde{\textbf{k}}_{*}^\top\Tilde{\vK}^{-1}\textbf{t} + \epsilon$ where $\Tilde{\textbf{k}}_*$ is $M \times 1$ matrix with $(\Tilde{\textbf{k}}_*)_i = \kappa(\textbf{x}_*, \textbf{z}_i)$ and  $\epsilon \sim \mathcal{N}(0, \kappa(\textbf{x}_*, \textbf{x}_*) - \Tilde{\textbf{k}}_*^\top\Tilde{\vK}^{-1}\Tilde{\textbf{k}}_*)$. Using the properties of Linear Gaussian model, we can write the posterior predictive distribution as
+\begin{align}
+        p(f_* |\textbf{x}_*, \textbf{X}, \textbf{f}, \textbf{Z}) &= \mathcal{N}(f_*| \boldsymbol{\mu}_*, \boldsymbol{\Sigma}_*)
+        \nonumber
+        \\ \boldsymbol{\mu}_* &= \Tilde{\textbf{k}}_*^\top\Tilde{\vK}^{-1}\boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}\Tilde{\vK}^{-1}\textbf{P}^\top\boldsymbol{\Lambda}^{-1}\textbf{f}
+        \nonumber
+        \\ \boldsymbol{\Sigma}_* &= \Tilde{\textbf{k}}_*^\top\Tilde{\vK}^{-1}\boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}\Tilde{\vK}^{-1}\Tilde{\textbf{k}}_* + \kappa(\textbf{x}_*, \textbf{x}_*) -\Tilde{\textbf{k}}_*^\top\Tilde{\vK}^{-1}\Tilde{\textbf{k}}_*
+        \nonumber
+\end{align}
+The computation cost of $\Tilde{\vK}^{-1}$ is $\mathcal{O}(M^3)$ while that for $\boldsymbol{\Sigma}_{\boldsymbol{t}|\boldsymbol{f}}$ is $\mathcal{O}(M^2N)$. Since $M << N$, hence the time complexity for computing this posterior predictive is $\mathcal{O}(M^2N)$ which is significantly less than the earlier complexity of $\mathcal{O}(N^3)$.
+\newpage
+
+\noindent \textbf{(2.)}
+We can write the marginal likelihood as
+\begin{align}
+        p(\textbf{f}|\textbf{X}, \textbf{Z}) &= \int p(\textbf{f}|\textbf{X}, \textbf{Z}, \textbf{t})p(\textbf{t}|\textbf{Z)} d\textbf{t}
+        \nonumber
+\end{align}
+Also, $\textbf{f} = \textbf{P}\Tilde{\vK}^{-1}\textbf{t} + \boldsymbol{\epsilon}$ where $\boldsymbol{\epsilon} \sim \mathcal{N}(0, \boldsymbol{\Lambda})$ and $ p(\textbf{t}|\textbf{Z}) = \mathcal{N}(\textbf{t}|0, \Tilde{\vK})$ (Equation \ref{eqn5_3}). Using the properties of linear Gaussian model, we can write
+\begin{align}
+        p(\textbf{f}|\textbf{X}, \textbf{Z}) &= \mathcal{N}(\textbf{f} | \boldsymbol{\mu}', \boldsymbol{\Sigma}')
+        \nonumber
+        \\ \boldsymbol{\mu}' &= \textbf{P}\Tilde{\vK}^{-1}\mathbf{0} = \textbf{0}
+        \nonumber
+        \\ \boldsymbol{\Sigma}' &= \textbf{P}\Tilde{\vK}^{-1}\textbf{P}^\top + \boldsymbol{\Lambda}
+        \nonumber
+\end{align}
+The MLE-II objective to obtain $\vZ$ is to maximize the marginal likelihood. 
+\begin{align}
+    \hat{\textbf{Z}}_{\text{MLE-II}} &= \arg \max_{\textbf{Z}}p(\textbf{f}|\textbf{X}, \textbf{Z})
+    \nonumber
+    \\&= \arg \min_{\textbf{Z}}(\log{|\boldsymbol{\Sigma'}|} + \textbf{f}^\top\boldsymbol{\Sigma'}^{-1}\textbf{f})
+    \nonumber
+\end{align}
+
+\end{pmisolution}
+
+\end{document}

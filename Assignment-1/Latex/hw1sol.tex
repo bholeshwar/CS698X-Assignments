@@ -1,0 +1,263 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage{pmisubmit}
+
+\begin{document}
+
+\initpmisubmision{1} % assignment number
+{Bholeshwar Khurana}   % your name
+{170214}	% your roll number
+
+\begin{pmisolution}
+
+% A vector symbol $\vb$, a symbol in blackboard font $\bR$, a symbol in calligraphic font $\cA$, \red{some} \green{colored} \blue{text}
+We will try to find the Moment generating function (MGF) of $p(x|\gamma) = \int_{0}^{\infty}p(x|\eta)p(\eta|\gamma)d\eta$. It is given that $p(x|\eta) = \cN(x|0,\eta)$ and $p(\eta|\gamma) = Exp(\eta|\gamma^2/2)$
+\begin{equation*}
+\begin{split}
+        p(x|\eta) &= \frac{1}{\sqrt{2\pi\eta}}e^{-x^2/2\eta} \\
+        p(\eta|\gamma) &= \frac{\gamma^2}{2}e^{-\gamma^2\eta/2}
+\end{split}
+\end{equation*}
+Hence, MGF ($M_x(t)$) would be:
+\begin{equation*}
+    \begin{split}
+        M_x(t) &= \int_{-\infty}^{\infty} e^{tx} \left[ \int_{0}^{\infty}p(x|\eta)p(\eta|\gamma)d\eta \right] dx \\
+        &= \int_{-\infty}^{\infty} e^{tx} \left[ \int_{0}^{\infty} \frac{1}{\sqrt{2\pi\eta}}e^{-x^2/2\eta}. \frac{\gamma^2}{2}e^{-\gamma^2\eta/2} d\eta \right] dx \\
+        &= \int_{0}^{\infty} \frac{\gamma^2e^{-\gamma^2\eta/2}}{2\sqrt{2\pi\eta}} \left[ \int_{-\infty}^{\infty} e^{tx-x^2/2\eta} dx \right] d\eta \\
+        &= \int_{0}^{\infty} \frac{\gamma^2e^{-\gamma^2\eta/2}}{2\sqrt{2\pi\eta}} \left[ \int_{-\infty}^{\infty} e^{-(\frac{x}{\sqrt{2\eta}} - \frac{t\sqrt{2\eta}}{2})^2}.e^{\frac{t^2\eta}{2}} dx \right] d\eta
+    \end{split}
+\end{equation*}
+Substitute $y=\frac{x}{\sqrt{2\eta}} - \frac{t\sqrt{2\eta}}{2}$, then $dy = \frac{dx}{\sqrt{2\eta}}$
+\begin{equation*}
+    M_x(t) = \int_{0}^{\infty} \frac{\gamma^2e^{-\gamma^2\eta/2}.e^{t^2\eta/2}}{2\sqrt{2\pi\eta}}.\sqrt{2\eta} \left[ \int_{-\infty}^{\infty} e^{-y^2}dy \right] d\eta
+\end{equation*}
+We know that Gaussian integral is $\sqrt{\pi}$, i.e. $\int_{-\infty}^{\infty} e^{-y^2}dy = \sqrt{\pi}$
+\begin{equation*}
+\begin{split}
+    \therefore M_x(t) &= \int_{0}^{\infty} \frac{\gamma^2}{2} e^{-\eta(\frac{\gamma^2-t^2}{2})} d\eta \\
+    &= \frac{\gamma^2}{2} \left[ \frac{e^{-\eta(\frac{\gamma^2-t^2}{2})}}{(-\frac{\gamma^2-t^2}{2})} \right] _0 ^{\infty} \\
+    \text{For $\gamma^2 > t^2$, } M_x(t) &= \frac{1}{1 - \frac{t^2}{\gamma^2}}
+\end{split}
+\end{equation*}
+Comparing this MGF function with those given in Wikipedia \footnote{\href{https://en.wikipedia.org/wiki/Moment-generating\_function}{https://en.wikipedia.org/wiki/Moment-generating\_function}}, we see that the distribution of $p(x|\gamma)$ would be Laplace distribution with mean 0 and variance $1/\gamma$
+\begin{equation*}
+    p(x|\gamma) = \cL(0, 1/\gamma) = \frac{\gamma}{2}e^{-\gamma |x|}
+\end{equation*}
+The marginal distribution $p(x|\gamma)$ means that how our data is distributed for a given value of $\gamma$.
+
+\newpage
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{"plot.pdf"}
+    \caption{Distributions of $p(x|\eta)$ and $p(x|\gamma)$ for mean=0 and variance=1}
+    \label{fig:plt}
+\end{figure}
+\noindent Figure \ref{fig:plt} shows the plots of $p(x|\eta)$ and $p(x|\gamma)$ for mean=0 and variance=1. We see that the plot of $p(x|\gamma)$ which is a Laplace distribution is more concentrated towards the mean (which is 0) than the Gaussian $p(x|\eta)$ and also has a sharp corner at the mean.
+
+
+\end{pmisolution}
+
+\begin{pmisolution} 
+
+The variance of the predictive posterior learned using $N$ training examples is $\sigma^2_N(\vx_*) = \beta^{-1} + \vx_*^\top\Sigma_N\vx_*$, where $\Sigma_N = (\beta\sum_{n=1}^{N}\vx_n\vx_n^\top + \lambda\vI)^{-1}$. Let the variance of the predictive posterior learned using $N+1$ training examples be $\sigma^2_{N+1}$.
+\begin{equation*}
+    \begin{split}
+        \sigma^2_{N+1}(\vx_*) &= \beta^{-1} + \vx_*^\top\Sigma_{N+1}\vx_* \\
+        &= \beta^{-1} + \vx_*^\top(\beta\sum_{n=1}^{N+1}\vx_n\vx_n^\top + \lambda\vI)^{-1}\vx_* \\
+        &= \beta^{-1} + \vx_*^\top(\beta\sum_{n=1}^{N}\vx_n\vx_n^\top + \lambda\vI + \beta\vx_{N+1}\vx_{N+1}^\top)^{-1}\vx_* \\
+    \end{split}
+\end{equation*}
+Let $\vM = \beta\sum_{n=1}^{N}\vx_n\vx_n^\top + \lambda\vI$
+\begin{equation*}
+    \begin{split}
+    \therefore \sigma^2_{N}(\vx_*) &= \beta^{-1} + \vx_*^\top\vM^{-1}\vx_*\\
+    \text{and } \sigma^2_{N+1}(\vx_*) &= \beta^{-1} + \vx_*^\top(\vM + \beta\vx_{N+1}\vx_{N+1}^\top)^{-1}\vx_*
+    \end{split}
+\end{equation*}
+Using the identity $(\vM + \beta\vx_{N+1}\vx_{N+1}^\top)^{-1} = \vM^{-1} - \frac{\beta(\vM^{-1}\vx_{N+1})(\vx_{N+1}^\top\vM^{-1})}{1 + \beta\vx_{N+1}^\top\vM^{-1}\vx_{N+1}}$, we get
+\begin{equation*}
+    \begin{split}
+        \sigma^2_{N+1}(\vx_*) &= \beta^{-1} + \vx_*^\top\vM^{-1}\vx_* - \vx_*^\top\frac{\beta(\vM^{-1}\vx_{N+1})(\vx_{N+1}^\top\vM^{-1})}{1 + \beta\vx_{N+1}^\top\vM^{-1}\vx_{N+1}}\vx_* \\ 
+        &= \sigma^2_{N}(\vx_*) - \vx_*^\top\frac{\beta(\vM^{-1}\vx_{N+1})(\vx_{N+1}^\top\vM^{-1})}{1 + \beta\vx_{N+1}^\top\vM^{-1}\vx_{N+1}}\vx_*
+    \end{split}
+\end{equation*}
+Clearly, $\vx_*^\top\frac{\beta(\vM^{-1}\vx_{N+1})(\vx_{N+1}^\top\vM^{-1})}{1 + \beta\vx_{N+1}^\top\vM^{-1}\vx_{N+1}}\vx_* > 0$ since every term is positive.\\ Hence, $\sigma^2_{N+1}(\vx_*) < \sigma^2_{N}(\vx_*)$
+
+\noindent Therefore, the variance of the predictive posterior decreases as the training set size $N$ increases.
+\end{pmisolution}
+
+\begin{pmisolution}
+
+We can write the empirical mean $\Bar{x}$  as a linear transformation of a random variable $\vz$ as follows:
+\begin{equation*}
+\begin{split}
+    \Bar{x} &= \va^\top\vz \\
+    \text{where, } \va_{N\times1} &= [ \frac{1}{N}, \frac{1}{N}, \cdots, \frac{1}{N} ]^\top \\
+    \text{and } \vz_{N\times1} &= [ x_1, x_2, \cdots, x_N ]^\top \\
+\end{split}
+\end{equation*}
+From this equation, we can clearly see that $\Bar{x}$ is the empirical mean, i.e.
+\begin{equation*}
+\Bar{x} = \frac{1}{N} \sum_{n=1}^{N} x_n
+\end{equation*}
+Since $x_1, x_2, \cdots, x_N$ are iid Gaussian observations with mean $\mu$ and variance $\sigma^2$, therefore $\vz$ is also a Gaussian random variable with the expected value  $ \bE[\vz] = \mathbf{\mu}_{N\times1} = [ \mu, \mu, \cdots, \mu ]^\top $ and co-variance matrix $cov[\vz] = \mathbf{\Sigma}_{N\times N} = \sigma^2\vI$, where $\vI$ is the $N\times N$ identity matrix. Since $\Bar{x}$ is a linear transformation of a Gaussian random variable, hence it would also be Gaussian distributed with the mean and variance as follows:
+\begin{equation*}
+    \begin{split}
+    \bE[\Bar{x}] &= \bE[\va^\top\vz] \\
+    &= \va^\top \mathbf{\mu} \\
+    &= \sum_{n=1}^{N} \frac{1}{N}\mu \\
+    & = \mu
+    \end{split}
+\end{equation*}
+\begin{equation*}
+    \begin{split}
+    \text{and } var[\Bar{x}] &= var[\va^\top\vz] \\
+    &= \va^\top\mathbf{\Sigma}\va \\
+    &= \sigma^2\va^\top\va \\
+    &= \sigma^2\sum_{n=1}^{N} \frac{1}{N^2} \\
+    &= \frac{\sigma^2}{N}
+    \end{split}
+\end{equation*}
+Therefore, the probability distribution of $\Bar{x}$ is $\cN(\mu, \frac{\sigma^2}{N})$.
+
+The result makes intuitive sense because, if all the data points have
+expected value $\mu$, then the empirical mean will also have the expected value $\mu$. Also, as
+the number of observations $N$ increases, we become more confident about the empirical mean, and hence the variance $\sigma^2/N$ is well explained.
+\end{pmisolution}
+
+\begin{pmisolution}
+\noindent \textbf{1.} We need to derive the posterior distribution of $\mu_m$.
+\begin{equation*}
+    \begin{split}
+    p(\mu_m|\vx^{m},\sigma^2) &= \frac{p(\vx^{m}|\mu_m, \sigma^2)p(\mu_m)}{\int p(\vx^{m}|\mu_m, \sigma^2)p(\mu_m) d\mu_m} \\
+    & \propto p(\vx^{m}|\mu_m, \sigma^2)p(\mu_m) \\
+    &= \prod_{n=1}^{N_m} p(x_n^{m}|\mu_m, \sigma^2)p(\mu_m) \\
+    &= \left[ \prod_{n=1}^{N_m} \cN(x_n^{m}|\mu_m,\sigma^2) \right] \cN(\mu_m|\mu_0, \sigma_0^2) \\
+    &\propto \left[ \prod_{n=1}^{N_m} \exp \left( \frac{-(x_n^{m} - \mu_m)^2}{2\sigma^2} \right) \right] \exp \left( \frac{-(\mu_m - \mu_0)^2}{2\sigma_0^2} \right) \\
+    &= \exp \left( \frac{-\sum_{n=1}^{N_m}  (x_n^{m} - \mu_m)^2}{2\sigma^2} \right) \exp \left( \frac{-(\mu_m - \mu_0)^2}{2\sigma_0^2} \right)
+    \end{split}
+\end{equation*}
+As proved in class, we know that the posterior would be Gaussian distribution whose mean and variance can be obtained using completing the squares method. Using the results derived in class, we get
+\begin{equation*}
+    \begin{split}
+        p(\mu_m|\vx^{m},\sigma^2) &= \cN(\mu_m | \mu_{P_m}, \sigma_{P_m}^2) \\
+        \text{where } \mu_{P_m} &= \frac{\sigma^2}{\sigma^2 + N_m\sigma_0^2}\mu_0 + \frac{N_m\sigma_0^2}{\sigma^2 + N_m\sigma_0^2}\Bar{x}^m \\
+        \frac{1}{\sigma_{P_m}{2}} &= \frac{N_m}{\sigma^2} + \frac{1}{\sigma_0^2}
+    \end{split}
+\end{equation*}
+Note that in the above equation $\Bar{x}^m = \frac{1}{N_m} \sum_{n=1}^{N_m} x_n^m$
+\\ \\ \\
+\noindent \textbf{2.} We need to compute the marginal likelihood $p(\vx | \mu_0, \sigma^2, \sigma_0^2)$ and estimate $\mu_0$ using MLE-II. We can write the marginal likelihood as:
+\begin{equation*}
+    \begin{split}
+        p(\vx | \mu_0, \sigma^2, \sigma_0^2) &= \int p(\vx|\boldsymbol{\mu}, \sigma^2)p(\boldsymbol{\mu}|\mu_0,\sigma_0^2)d\boldsymbol{\mu} \\
+        &= \prod_{m=1}^{M} \int p(\vx^{m}|\mu_m, \sigma^2)p(\mu_m|\mu_0,\signa_0^2) d\mu_m
+    \end{split}
+\end{equation*}
+From the solution of part-1, we can write it as
+\begin{equation*}
+    \begin{split}
+        p(\vx | \mu_0, \sigma^2, \sigma_0^2) &= \prod_{m=1}^{M} \frac{\prod_{n=1}^{N_m} p(x_n^{m}|\mu_m, \sigma^2)p(\mu_m)}{p(\mu_m|\vx^{m},\sigma^2)} \\
+        &= \prod_{m=1}^{M} \frac{\prod_{n=1}^{N_m} \cN(x_n^m|\mu_m, \sigma^2) \cN(\mu_m|\mu_0,\sigma_0^2)}{\cN(\mu_m | \mu_{P_m}, \sigma_{P_m}^2)}
+    \end{split}
+\end{equation*}
+
+\noindent Now we do MLE-II to estimate $\mu_0$
+\begin{equation*}
+    \mu_0 = \argmax_{\mu_0} \prod_{m=1}^{M} \frac{\prod_{n=1}^{N_m} \cN(x_n^m|\mu_m, \sigma^2) \cN(\mu_m|\mu_0,\sigma_0^2)}{\cN(\mu_m | \mu_{P_m}, \sigma_{P_m}^2)}
+\end{equation*}
+Using negative log-likelihood:
+\begin{equation*}
+    \mu_0 = \argmin_{\mu_0} \sum_{m=1}^{M} \left[ \frac{(\mu_m - \mu_0)^2}{2\sigma_0^2} - \frac{(\mu_m - \mu_{P_m})^2}{2\sigma_{P_m}^2} + C \right]
+\end{equation*}
+where $C$ is constant term (i.e. doesn't depend on $\mu_0$).
+
+\noindent Differentiating w.r.t. $\mu_0$ and equating to zero, we get:
+\begin{equation*}
+    \sum_{m=1}^{M} \frac{\mu_m-\mu_0}{\sigma_0^2} = \sum_{m=1}^{M} \frac{\mu_m-\mu_{P_m}}{\sigma_{P_m}^2} .\frac{d\mu_{P_m}}{d\mu_0}
+\end{equation*}
+From the value of $\mu_{P_m}$ derived above, we get $\frac{d\mu_{P_m}}{d\mu_0} = \frac{\sigma_{P_m}^2}{\sigma_0^2}$. Hence,
+\begin{equation*}
+    \begin{split}
+        \sum_{m=1}^{M} \mu_0 &= \sum_{m=1}^{M} \mu_{P_m} \\
+        \sum_{m=1}^{M} \mu_0 &= \sum_{m=1}^{M} \left( \frac{\sigma^2}{\sigma^2 + N_m\sigma_0^2}\mu_0 + \frac{N_m\sigma_0^2}{\sigma^2 + N_m\sigma_0^2}\Bar{x}^m \right) \\
+        \sum_{m=1}^{M} \frac{N_m\sigma_0^2}{\sigma^2 + N_m\sigma_0^2}\mu_0 &= \sum_{m=1}^{M} \frac{N_m\sigma_0^2}{\sigma^2 + N_m\sigma_0^2}\Bar{x}^m \\
+        \mu_0 &= \frac{ \sum_{m=1}^{M} \frac{N_m}{\sigma^2 + N_m\sigma_0^2}\Bar{x}^m }{ \sum_{m=1}^{M} \frac{N_m}{\sigma^2 + N_m\sigma_0^2} }
+    \end{split}
+\end{equation*}
+Thus, it is the MLE-II estimate of $\mu_0$.
+\\ \\ \\
+\textbf{3.} The benefit of using MLE-II estimate as opposed to using a known value is that we are able to use the data to learn the hyperparameter. This avoids personal bias which is present in the case of known fixed value. This helps us to get a better prior over $\mu_m$ and hence a better posterior. 
+
+\end{pmisolution}
+
+\begin{pmisolution}
+For the given likelihood and prior, we can write the marginal likelihood as:
+\begin{equation*}
+    \begin{split}
+    p(\vy^{(m)}|\vX^{(m)}) &= \int p(\vy^{(m)}|\vX^{(m)}, \vw_m) p(\vw_m) d\vw_m \\
+    &= \int \cN(\vy^{(m)} | \vX^{(m)}\vw_m, \beta^{-1}\vI_N) \cN(\vw_m|\vw_0, \lambda^{-1}\mathbf{I}_D)
+    \end{split}
+\end{equation*}
+From the results derived in class, we can write the marginal likelihood as
+\begin{equation*}
+    p(\vy^{(m)}|\vX^{(m)}) = \cN(\vy^{(m)} | \vX^{(m)}\vw_0, \beta^{-1}\vI_N + \lambda^{-1}\vX^{(m)}^\top\vX^{(m)})
+\end{equation*}
+Since the scores for each school are i.i.d., therefore we can write 
+\begin{equation*}
+    p(\vy | \vX) = \prod_{m=1}^{M} p(\vy^{(m)}|\vX^{(m)})
+\end{equation*}
+Taking negative-log-likelihood of the above expression:
+\begin{equation*}
+\begin{split}
+    -\log(p(\vy | \vX)) &= \sum_{m=1}^M (-\log(p(\vy^{(m)}|\vX^{(m)})) \\
+    &= \sum_{m=1}^M (\vy^{(m)} - \vX^{(m)}\vw_0)^\top (\beta^{-1}\vI_N + \lambda^{-1}\vX^{(m)}^\top\vX^{(m)})^{-1} (\vy^{(m)} - \vX^{(m)}\vw_0) + C
+\end{split}
+\end{equation*}
+Here $C$ refers to the terms which do not depend on $w_0$.\\ Hence for MLE-II of $w_0$, we need to optimize the objective $\{\argmin_{w_0} ( \sum_{m=1}^M (\vy^{(m)} - \vX^{(m)}\vw_0)^\top (\beta^{-1}\vI_N + \lambda^{-1}\vX^{(m)}^\top\vX^{(m)})^{-1} (\vy^{(m)} - \vX^{(m)}\vw_0) )\}$
+\\ \\
+The benefit of using MLE-II estimate for $w_0$ as opposed to fixing the value of $w_0$ is that we are able to use the data to learn the hyperparameter. $w_0$ is able to accomodate according to the data and hence we can obtain better school-specific weight vectors.
+\end{pmisolution}
+
+\begin{pmisolution}
+
+\textbf{1.} 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{"posterior.pdf"}
+    \caption{Posteriors of $w$ for different $k$'s}
+    \label{fig:posterior}
+\end{figure}
+\\ \\ \\
+\textbf{2.} 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{"ppd.pdf"}
+    \caption{Posterior Predictives for different $k$'s}
+    \label{fig:ppd}
+\end{figure}
+\\ \\ \\
+\noindent \textbf{3.} We obtain the following values of log marginal likelihood for the 4 models: \\
+For k = 1, the log marginal likelihood is -32.35 \\
+For k = 2, the log marginal likelihood is -22.77 \\
+For k = 3, the log marginal likelihood is -22.08 \\
+For k = 4, the log marginal likelihood is -22.39 \\
+
+As we see we get the maximum value of log marginal likelihood for $k=3$, hence this model seems to explain data the best.
+\\ \\ \\
+\textbf{4.} 
+We obtain the following values of log likelihood for $w_{MAP}$ for the 4 models: \\
+For k = 1, the log likelihood for MAP estimate is -28.09 \\
+For k = 2, the log likelihood for MAP estimate is -15.36 \\
+For k = 3, the log likelihood for MAP estimate is -10.94 \\
+For k = 4, the log likelihood for MAP estimate is -7.22 \\
+
+As we see we get the maximum value of log marginal likelihood for $k=4$, hence this model seems to explain data the best.
+
+Our answers for part-3 and part-4 differ. Highest log marginal likelihood is more reasonable to use than highest log likelihood because marginal likelihood is obtained using all the values of $w$ as opposed to point-estimate of $w_{MAP}$ in the case of likelihood. Hence, it is a better generalisation of the models. So, model-3 is the best model.
+\\ \\ \\
+\textbf{5.} From the  plot of posterior-predictive (part-2) for our best model (i.e. model-3), we see that the model has a higher uncertainty (i.e. higher variance) in the region near $x=-4$ compared to other regions. Since including additional training inputs decreases the variance of the model, hence we would include this new input in the region near $x=-4$.
+
+\end{pmisolution}
+
+\end{document}
